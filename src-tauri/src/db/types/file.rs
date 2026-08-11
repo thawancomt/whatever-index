@@ -32,6 +32,7 @@ impl File {
             .extension()
             .and_then(|f| f.to_str())
             .unwrap_or_default()
+            .to_lowercase()
             .to_string();
 
         let size_bytes = metadata.len() as i64;
@@ -83,6 +84,7 @@ impl File {
             .extension()
             .and_then(|f| f.to_str())
             .unwrap_or_default()
+            .to_lowercase()
             .to_string();
 
         let size_bytes = metadata.len() as i64;

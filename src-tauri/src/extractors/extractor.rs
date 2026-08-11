@@ -16,7 +16,7 @@ pub fn extract_content_from_files(
 
     for (extension, files) in mapped_files_by_extension {
         match extension.as_str() {
-            "pdf" => {
+            "pdf" | "docx" => {
                 content_by_path.extend(DocumentAdapter.ingest(files));
             }
             "txt" | "md" | "log" | "env" | "ini" | "conf" | "toml" | "yml" | "yaml" | "json" => {
