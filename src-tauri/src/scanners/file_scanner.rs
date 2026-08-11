@@ -32,17 +32,6 @@ fn load_mtime_cache() -> Option<HashMap<PathBuf, i64>> {
     Some(rows.filter_map(Result::ok).collect())
 }
 
-/// Persiste os arquivos escaneados em lotes.
-fn persist_files(files: &[File]) {
-    if let Ok(persister) = SqliteRepository::new() {
-        for batch in files.chunks(5000) {
-            if let Err(e) = persister.insert_files_batch(batch) {
-                eprintln!("Error while persisting batch: {}", e);
-            }
-        }
-    }
-}
-
 pub fn scanner() -> Option<ScanResponse> {
     let root = env::home_dir()?;
     let cache = load_mtime_cache()?;
@@ -62,15 +51,13 @@ pub fn scanner() -> Option<ScanResponse> {
         })
         .collect();
 
-    persist_files(&files);
-
     Some(files)
 }
 
-pub fn map_files_by_extension(paths: ScanResponse) -> FilesByExtensionResponse {
+pub fn map_files_by_extension(paths: &[File]) -> FilesByExtensionResponse {
     let mut files_by_extension: FilesByExtensionResponse = HashMap::new();
 
-    for file in paths {
+    for file in paths.to_vec() {
         files_by_extension
             .entry(file.extension)
             .or_default()

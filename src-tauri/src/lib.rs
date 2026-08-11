@@ -17,7 +17,6 @@ mod extractors;
 mod paths;
 mod repositories;
 mod scanners;
-mod tokenizers;
 mod types;
 mod use_cases;
 mod utils;

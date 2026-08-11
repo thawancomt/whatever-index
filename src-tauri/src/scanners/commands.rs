@@ -1,12 +1,9 @@
 use std::{collections::HashSet, path::PathBuf};
 
-use crate::{
-    types::database::BinaryDatabase,
-    use_cases::{scan_files, search::search_text},
-};
+use crate::use_cases::{scan_files, search::search_text};
 
 #[tauri::command(async)]
-pub fn re_scan() -> BinaryDatabase {
+pub fn re_scan() {
     scan_files::scan_files()
 }
 

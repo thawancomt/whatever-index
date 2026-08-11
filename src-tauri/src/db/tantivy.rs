@@ -47,10 +47,10 @@ impl IndexerService {
             let mut doc = tantivy::TantivyDocument::default();
             doc.add_text(path_field, file.to_string_lossy());
             doc.add_text(content_field, content);
-            self.tantivy_writer.add_document(doc);
+            let _ = self.tantivy_writer.add_document(doc);
         }
 
-        self.tantivy_writer.commit();
+        let _ = self.tantivy_writer.commit();
 
         Some(())
     }
