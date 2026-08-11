@@ -17,7 +17,6 @@ mod extractors;
 mod paths;
 mod repositories;
 mod scanners;
-mod types;
 mod use_cases;
 mod utils;
 
@@ -40,8 +39,8 @@ pub fn run() {
 
             if !tantivy_dir.exists() {
                 print!("Tantivy folder doesnt existis, creating it");
-                fs::create_dir_all(&tantivy_dir);
-                Index::create_in_dir(&tantivy_dir, tantivy_schema_builder());
+                let _ = fs::create_dir_all(&tantivy_dir);
+                let _ = Index::create_in_dir(&tantivy_dir, tantivy_schema_builder());
             };
 
             let tantivy_index = Index::open_in_dir(tantivy_dir)
@@ -52,7 +51,7 @@ pub fn run() {
                 .expect("Error while setting tantivy during setup");
 
             match init_database() {
-                Ok(database) => println!("Database initilized fine"),
+                Ok(_database) => println!("Database initilized fine"),
                 Err(e) => {
                     println!("erro : {}", e)
                 }

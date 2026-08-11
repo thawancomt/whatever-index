@@ -15,11 +15,18 @@ pub fn scan_files() {
 
     let _ = index_files_to_tantivy(&content_by_file);
 
-    persisfile
+    match SqliteRepository::new() {
+        Ok(repo) => {
+            let _ = repo.insert_files_batch(&files);
+        }
+        Err(e) => {
+            eprintln!("{}", e);
+        }
+    };
 }
 
 fn index_files_to_tantivy(data: &ExtractedContentFromFilesResponse) -> Option<()> {
-    let Ok(db) = SqliteRepository::new() else {
+    let Ok(_db) = SqliteRepository::new() else {
         return None;
     };
 
@@ -28,7 +35,7 @@ fn index_files_to_tantivy(data: &ExtractedContentFromFilesResponse) -> Option<()
         .clone()
         .expect("Tantivy was not setted but it was called in index");
 
-    if let Ok(mut indexer) = IndexerService::new(db, index.clone()) {
+    if let Ok(mut indexer) = IndexerService::new(index.clone()) {
         indexer.index_files(data);
         return Some(());
     }

@@ -2,10 +2,7 @@ use rayon::prelude::*;
 use std::{collections::HashMap, env, path::PathBuf};
 use walkdir::DirEntry;
 
-use crate::{
-    db::{database::get_database, types::file::File},
-    repositories::sqlite_repository::{SQLRepository, SqliteRepository},
-};
+use crate::db::{database::get_database, types::file::File};
 
 pub type ScanResponse = Vec<File>;
 pub type FilesByExtensionResponse = HashMap<String, Vec<PathBuf>>;

@@ -1,12 +1,9 @@
 use std::{collections::HashMap, path::PathBuf, sync::OnceLock};
 
 use tantivy::{
-    doc,
     schema::{Schema, Value, STORED, STRING, TEXT},
     Index, IndexWriter, TantivyDocument,
 };
-
-use crate::repositories::sqlite_repository::SqliteRepository;
 
 pub fn tantivy_schema_builder() -> Schema {
     let mut schema = Schema::builder();
@@ -18,18 +15,16 @@ pub fn tantivy_schema_builder() -> Schema {
 }
 
 pub struct IndexerService {
-    database_repo: SqliteRepository,
     tantivy_writer: IndexWriter,
     schema: Schema,
 }
 
 impl IndexerService {
-    pub fn new(db: SqliteRepository, index: Index) -> tantivy::Result<Self> {
+    pub fn new(index: Index) -> tantivy::Result<Self> {
         let tantivy_writer = index.writer(50_000_000)?;
         let schema = tantivy_schema_builder();
 
         Ok(Self {
-            database_repo: db,
             tantivy_writer,
             schema,
         })
@@ -63,7 +58,6 @@ use tantivy::{IndexReader, ReloadPolicy};
 #[derive(Debug)]
 pub struct SearchResult {
     pub path: String,
-    pub score: f32, // Relevância do resultado
 }
 
 pub struct SearchService {
@@ -117,7 +111,7 @@ impl SearchService {
         let path_field = self.schema.get_field("path").unwrap();
 
         // 5. Itera sobre os resultados para extrair os dados
-        for (score, doc_address) in top_docs {
+        for (_, doc_address) in top_docs {
             // Recupera o documento real do disco/memória
             let retrieved_doc: TantivyDocument = searcher.doc(doc_address)?;
 
@@ -126,7 +120,6 @@ impl SearchService {
                 if let Some(path_str) = path_value.as_str() {
                     results.push(SearchResult {
                         path: path_str.to_string(),
-                        score,
                     });
                 }
             }

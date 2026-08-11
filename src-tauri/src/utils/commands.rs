@@ -1,4 +1,3 @@
-use std::path::{Path, PathBuf};
 
 #[tauri::command(async)]
 pub fn open_file(path: String) -> Result<(), String> {

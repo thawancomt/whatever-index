@@ -3,7 +3,6 @@ use rusqlite::Connection;
 use crate::db::{database::get_database, types::file::File};
 
 pub trait SQLRepository {
-    fn insert_file(&self, file: &File) -> rusqlite::Result<()>;
     fn insert_files_batch(&self, files: &[File]) -> rusqlite::Result<()>;
 }
 
@@ -19,20 +18,6 @@ impl SqliteRepository {
 }
 
 impl SQLRepository for SqliteRepository {
-    fn insert_file(&self, file: &File) -> rusqlite::Result<()> {
-        self.conn.execute(
-            INSERT_SCHEMA,
-            rusqlite::params![
-                file.path.to_string_lossy(),
-                file.extension,
-                file.mtime,
-                file.indexed_at,
-                file.content_hash,
-                file.size_bytes,
-            ],
-        )?;
-        Ok(())
-    }
     fn insert_files_batch(&self, files: &[File]) -> rusqlite::Result<()> {
         if files.is_empty() {
             return Ok(());
@@ -48,5 +33,5 @@ impl SQLRepository for SqliteRepository {
     }
 }
 
-const INSERT_SCHEMA: &str = include_str!("../db/queries/insert_file.sql");
+// const INSERT_SCHEMA: &str = include_str!("../db/queries/insert_file.sql");
 const INSERT_SCHEMA_BATCH: &str = include_str!("../db/queries/insert_files_batch.sql");

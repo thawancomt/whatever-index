@@ -9,9 +9,3 @@ pub fn get_resource_dir() -> &'static Path {
         .get()
         .expect("resource dir não inicializado — chame init_resource_dir() no setup()")
 }
-
-pub fn get_data_dir() -> &'static Path {
-    DATA_DIR
-        .get()
-        .expect("resource dir não inicializado — chame init_resource_dir() no setup()")
-}
