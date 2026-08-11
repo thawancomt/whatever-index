@@ -39,8 +39,8 @@ pub fn scanner() -> Option<ScanResponse> {
         .into_iter()
         .filter_entry(|f| !is_hidden(f))
         .filter_map(Result::ok)
-        .filter(|f| f.path().is_file())
         .par_bridge()
+        .filter(|f| f.path().is_file())
         .filter_map(|f| {
             File::from_path_using_cache(&f.into_path(), &cache)
                 .ok()

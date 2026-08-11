@@ -1,7 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
-import { useSearch } from "@/hooks/useSearch";
 import { cn } from "@/lib/utils";
 import { useSearchStore } from "@/stores/search.store";
 import { RiSearch2Line } from "@remixicon/react";

@@ -9,7 +9,20 @@ pub fn scan_files() {
     println!("Calling use case, scan");
     let files = scanner().unwrap_or_default();
 
+    let total_files_size_bytes: i64 = files.clone().into_iter().map(|f| f.size_bytes).sum();
+
+    println!(
+        "Found:  {} files, total size in MB: {}",
+        files.len(),
+        total_files_size_bytes * 1024 * 1024
+    );
+
     let files_by_extension = map_files_by_extension(&files);
+
+    println!(
+        "Found {} differents extensions",
+        files_by_extension.keys().len()
+    );
 
     let content_by_file = extract_content_from_files(files_by_extension);
 
@@ -26,19 +39,16 @@ pub fn scan_files() {
 }
 
 fn index_files_to_tantivy(data: &ExtractedContentFromFilesResponse) -> Option<()> {
-    let Ok(_db) = SqliteRepository::new() else {
-        return None;
-    };
-
-    let index = TANTIVY_INDEX
+    let tantivy_index = TANTIVY_INDEX
         .get()
         .clone()
         .expect("Tantivy was not setted but it was called in index");
 
-    if let Ok(mut indexer) = IndexerService::new(index.clone()) {
-        indexer.index_files(data);
-        return Some(());
+    match IndexerService::new(tantivy_index.clone()) {
+        Ok(mut indexer) => return indexer.index_files(data),
+        Err(e) => {
+            eprintln!("Error while indexing files into Tantivy: {}", e);
+            return None;
+        }
     }
-
-    None
 }

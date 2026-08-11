@@ -1,5 +1,4 @@
 
-import { Card, CardContent } from "@/components/ui/card";
 
 
 import SearchBox from "./SearchBox";

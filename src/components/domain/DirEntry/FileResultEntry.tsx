@@ -2,7 +2,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Item, ItemActions, ItemContent, ItemHeader, ItemMedia, ItemTitle } from "@/components/ui/item";
 import { getFileDomain } from "@/domain/files/file_utils";
-import { RiFileLine } from "@remixicon/react";
 import { invoke } from "@tauri-apps/api/core";
 interface FileResultEntryProps {
     path: string,
