@@ -1,5 +1,7 @@
 use crate::{adapters::traits::Adapter, paths::get_resource_dir};
-use std::{collections::HashMap, path::PathBuf, process::Command};
+use quick_xml::{events::Event, Reader};
+use std::{collections::HashMap, fs::File, io::Read, path::PathBuf, process::Command};
+use zip::ZipArchive;
 
 pub struct DocumentAdapter;
 pub struct PDFAdapter;
@@ -28,7 +30,9 @@ impl Adapter for DocumentAdapter {
                 "pdf" => {
                     content_by_file.extend(PDFAdapter.ingest(paths));
                 }
-                "docx" => {}
+                "docx" => {
+                    content_by_file.extend(DOCXApter.ingest(paths));
+                }
                 _ => {}
             }
         }
@@ -77,6 +81,55 @@ impl Adapter for PDFAdapter {
 
 impl Adapter for DOCXApter {
     fn ingest(&self, paths: Vec<PathBuf>) -> HashMap<PathBuf, String> {
-        HashMap::new()
+        let mut content_by_file = HashMap::new();
+
+        for path in paths {
+            let Ok(file) = File::open(&path) else {
+                continue;
+            };
+
+            let Ok(mut archive) = ZipArchive::new(file) else {
+                continue;
+            };
+
+            let Ok(mut doc_xml) = archive.by_name("word/document.xml") else {
+                continue;
+            };
+
+            let mut xml = String::new();
+            if doc_xml.read_to_string(&mut xml).is_err() {
+                continue;
+            }
+
+            let mut reader = Reader::from_str(&xml);
+            reader.config_mut().trim_text(true);
+
+            let mut content = String::new();
+
+            loop {
+                match reader.read_event() {
+                    Ok(Event::Text(text)) => {
+                        let unescaped_text = text.xml_content().ok();
+                        if let Some(value) = unescaped_text {
+                            if !value.is_empty() {
+                                if !content.is_empty() {
+                                    content.push(' ');
+                                }
+                                content.push_str(&value);
+                            }
+                        }
+                    }
+                    Ok(Event::Eof) => break,
+                    Ok(_) => {}
+                    Err(_) => break,
+                }
+            }
+
+            if !content.is_empty() {
+                content_by_file.insert(path, content);
+            }
+        }
+
+        content_by_file
     }
 }
