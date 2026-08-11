@@ -1,0 +1,82 @@
+use crate::{adapters::traits::Adapter, paths::get_resource_dir};
+use std::{collections::HashMap, path::PathBuf, process::Command};
+
+pub struct DocumentAdapter;
+pub struct PDFAdapter;
+pub struct DOCXApter;
+
+impl Adapter for DocumentAdapter {
+    fn ingest(&self, paths: Vec<PathBuf>) -> std::collections::HashMap<PathBuf, String> {
+        let mut files_by_extension: HashMap<String, Vec<PathBuf>> = HashMap::new();
+
+        for path in paths {
+            let extension = match path.extension() {
+                Some(ext) => ext,
+                None => continue,
+            };
+
+            files_by_extension
+                .entry(extension.to_string_lossy().to_string())
+                .or_insert_with(Vec::new)
+                .push(path);
+        }
+
+        let mut content_by_file = HashMap::new();
+
+        for (extension, paths) in files_by_extension {
+            match extension.as_str() {
+                "pdf" => {
+                    content_by_file.extend(PDFAdapter.ingest(paths));
+                }
+                "docx" => {}
+                _ => {}
+            }
+        }
+
+        content_by_file
+    }
+}
+
+impl Adapter for PDFAdapter {
+    fn ingest(&self, paths: Vec<PathBuf>) -> HashMap<PathBuf, String> {
+        let python_pdf_extractor_dir = get_resource_dir().join("python-adapter");
+
+        let mut cmd = Command::new("uv");
+
+        cmd.current_dir(python_pdf_extractor_dir);
+        cmd.args(["run", "pdf_extractor.py", "--spawn", "--files"]);
+
+        cmd.args(&paths);
+
+        let result = cmd.output();
+
+        match result {
+            Ok(output) if output.status.success() => {
+                let stdout_str = String::from_utf8_lossy(&output.stdout);
+
+                serde_json::from_str(&stdout_str).unwrap_or_else(|e| {
+                    // Imprime o erro E o conteúdo bruto retornado no stdout
+                    eprintln!("Erro ao deserializar: {:#?}", e);
+
+                    HashMap::new()
+                })
+            }
+
+            Ok(e) => {
+                eprintln!(
+                    "Fail while calling python pdf extractor: {}",
+                    String::from_utf8_lossy(&e.stderr)
+                );
+                HashMap::new()
+            }
+
+            Err(_) => HashMap::new(),
+        }
+    }
+}
+
+impl Adapter for DOCXApter {
+    fn ingest(&self, paths: Vec<PathBuf>) -> HashMap<PathBuf, String> {
+        HashMap::new()
+    }
+}
