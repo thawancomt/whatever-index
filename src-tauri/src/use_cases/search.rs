@@ -1,39 +1,20 @@
 use std::{collections::HashSet, path::PathBuf};
 
-use crate::repositories::{binary_persister::BinaryPersister, traits::Persister};
+use crate::db::tantivy::SearchService;
 
 pub fn search_text(query: String) -> HashSet<PathBuf> {
-    let database = BinaryPersister::load();
+    let service = SearchService::new();
 
-    let trimmed = query.trim().to_lowercase();
-    let mut queries = trimmed.split_whitespace().map(|word| {
-        word.trim_matches(|c: char| !c.is_alphanumeric())
-            .to_string()
-    });
+    if let Ok(searcher) = service {
+        let result = searcher.search(&query, 300).expect("Something goes wrong");
 
-    let mut tree: HashSet<PathBuf> = HashSet::new();
+        let some: HashSet<PathBuf> = result
+            .iter()
+            .map(|f| PathBuf::from(f.path.clone()))
+            .collect();
 
-    if let Some(first_term) = queries.next() {
-        for (word, files) in database.range(first_term.to_string()..) {
-            if !word.starts_with(&first_term) {
-                continue;
-            }
-            tree.extend(files.clone());
-        }
+        return some;
     }
 
-    for term in queries {
-        let mut current_files: HashSet<PathBuf> = HashSet::new();
-        for (word, files) in database.range(term.to_string()..) {
-            if !word.starts_with(&term) {
-                continue;
-            }
-
-            current_files.extend(files.clone());
-        }
-
-        tree.retain(|file| current_files.contains(file));
-    }
-
-    tree
+    HashSet::new()
 }
