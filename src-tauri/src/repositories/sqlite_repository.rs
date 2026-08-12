@@ -28,7 +28,6 @@ impl SQLRepository for SqliteRepository {
 
         self.conn
             .execute(INSERT_SCHEMA_BATCH, rusqlite::params![payload])?;
-
         Ok(())
     }
 }

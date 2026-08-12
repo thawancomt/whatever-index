@@ -1,4 +1,5 @@
 use crate::{
+    app_error::errors::{AppError, AppResult},
     db::tantivy::TANTIVY_INDEX,
     extractors::extractor::{extract_content_from_files, ExtractedContentFromFilesResponse},
     repositories::sqlite_repository::{SQLRepository, SqliteRepository},
@@ -27,28 +28,41 @@ pub fn scan_files() {
 
     let content_by_file = extract_content_from_files(files_by_extension);
 
-    let _ = index_files_to_tantivy(&content_by_file);
+    match index_files_to_tantivy(&content_by_file) {
+        Ok(_) => println!("Files, indexed"),
+        Err(e) => {
+            eprintln!("{e}")
+        }
+    };
 
     match SqliteRepository::new() {
         Ok(repo) => {
-            let _ = repo.insert_files_batch(&files);
+            match repo.insert_files_batch(&files) {
+                Ok(_) => {
+                    println!("Files persisted : {}", files.len())
+                }
+                Err(e) => {
+                    eprintln!("Error while persisting files, {e}")
+                }
+            };
         }
         Err(e) => {
-            eprintln!("{}", e);
+            eprintln!("Error while instanciating SqliteRepo {}", e);
         }
     };
 }
 
-fn index_files_to_tantivy(data: &ExtractedContentFromFilesResponse) -> Option<()> {
-    let tantivy_index = TANTIVY_INDEX
-        .get()
-        .expect("Tantivy was not setted but it was called in index");
+fn index_files_to_tantivy(data: &ExtractedContentFromFilesResponse) -> AppResult<()> {
+    let mut index_service = IndexerService::new()?;
 
-    match IndexerService::new(tantivy_index.clone()) {
-        Ok(mut indexer) => return indexer.index_files(data),
+    match index_service.index_files(data) {
+        Ok(_) => {
+            println!("Files inserted: {}", data.len())
+        }
         Err(e) => {
-            eprintln!("Error while indexing files into Tantivy: {}", e);
-            return None;
+            eprintln!("Error on Indexing Tantivy Files: {}", e)
         }
     }
+
+    Ok(())
 }

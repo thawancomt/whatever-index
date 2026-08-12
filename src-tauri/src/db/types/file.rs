@@ -55,6 +55,7 @@ impl File {
                 return Ok(None);
             }
         }
+        println!("File saved: {}", path.display());
 
         let extension = path
             .extension()

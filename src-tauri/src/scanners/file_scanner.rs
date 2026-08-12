@@ -11,6 +11,21 @@ fn is_hidden(path: &DirEntry) -> bool {
     path.file_name().to_string_lossy().starts_with('.')
 }
 
+#[cfg(windows)]
+fn filter_exclusion_folders(path: &PathBuf) -> bool {
+    if let Some(root) = env::home_dir() {
+        let excluded = [root.join("AppData")];
+        if excluded.iter().any(|e| path.starts_with(e)) {
+            return false;
+        }
+    }
+    true
+}
+#[cfg(not(windows))]
+fn filter_exclusion_folders(_path: &Path) -> bool {
+    true
+}
+
 fn load_mtime_cache() -> Option<HashMap<PathBuf, i64>> {
     let conn = get_database().ok()?;
     let mut stmt = conn
@@ -33,11 +48,12 @@ pub fn scanner() -> Option<ScanResponse> {
     let root = env::home_dir()?;
     let cache = load_mtime_cache()?;
 
+    println!("Root path: {}", root.display());
     println!("Loaded mtime cache: {}", cache.len());
 
     let files: ScanResponse = walkdir::WalkDir::new(root)
         .into_iter()
-        .filter_entry(|f| !is_hidden(f))
+        .filter_entry(|f| !is_hidden(f) && filter_exclusion_folders(&f.path().to_path_buf()))
         .filter_map(Result::ok)
         .par_bridge()
         .filter(|f| f.path().is_file())

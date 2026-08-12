@@ -12,6 +12,7 @@ use crate::{
 };
 
 mod adapters;
+mod app_error;
 mod db;
 mod extractors;
 mod paths;
@@ -66,6 +67,7 @@ pub fn run() {
             scanners::commands::search,
             utils::commands::open_file,
             db::commands::reset_index,
+            db::commands::get_total_files_indexed
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

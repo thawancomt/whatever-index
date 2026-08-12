@@ -1,6 +1,11 @@
-use rusqlite::Connection;
+use std::path::PathBuf;
 
-use crate::paths::DATA_DIR;
+use rusqlite::{Connection, Error as SqliteError};
+
+use crate::{
+    app_error::errors::{AppError, AppResult},
+    paths::DATA_DIR,
+};
 
 const SCHEMA: &str = include_str!("./queries/schema.sql");
 
@@ -16,27 +21,22 @@ pub fn init_database() -> rusqlite::Result<()> {
     Ok(())
 }
 
-pub fn get_database() -> rusqlite::Result<Connection> {
-    let db_path = DATA_DIR
-        .get()
-        .expect("Not data dir folder found")
-        .join("whatever-index.db");
-    rusqlite::Connection::open(db_path)
+pub fn get_database() -> AppResult<Connection> {
+    let data_dir = DATA_DIR.get().ok_or(AppError::DataDirNotSet)?;
+
+    let db_path = data_dir.join("whatever-index.db");
+
+    let conn = Connection::open(db_path)?;
+
+    Ok(conn)
 }
 
-pub fn drop_database() {
-    let Ok(conn) = get_database() else {
-        eprintln!("Database at this point should be working");
-        return;
-    };
+pub fn drop_database() -> AppResult<()> {
+    let conn = get_database()?;
 
-    match conn.execute(DROP_FILES_SQL, []) {
-        Ok(_) => {}
-        Err(e) => {
-            eprintln!("Error while droping database {}", e);
-            return;
-        }
-    }
+    let result = conn.execute(DROP_FILES_SQL, [])?;
+
+    Ok(())
 }
 
 const DROP_FILES_SQL: &str = include_str!("./queries/drop_files.sql");
