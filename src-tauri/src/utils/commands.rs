@@ -1,4 +1,3 @@
-
 #[tauri::command(async)]
 pub fn open_file(path: String) -> Result<(), String> {
     #[cfg(target_os = "linux")]
@@ -6,6 +5,16 @@ pub fn open_file(path: String) -> Result<(), String> {
         use std::process::Command;
 
         let _ = Command::new("xdg-open")
+            .arg(path)
+            .spawn()
+            .map_err(|e| println!("Error while trying to opening: {}", e));
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        use std::process::Command;
+
+        let _ = Command::new("ii")
             .arg(path)
             .spawn()
             .map_err(|e| println!("Error while trying to opening: {}", e));

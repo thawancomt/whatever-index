@@ -17,6 +17,7 @@ mod extractors;
 mod paths;
 mod repositories;
 mod scanners;
+mod tantivy_indexer;
 mod use_cases;
 mod utils;
 
@@ -63,7 +64,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             scanners::commands::re_scan,
             scanners::commands::search,
-            utils::commands::open_file
+            utils::commands::open_file,
+            db::commands::reset_index,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

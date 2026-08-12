@@ -4,6 +4,7 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/in
 import { cn } from "@/lib/utils";
 import { useSearchStore } from "@/stores/search.store";
 import { RiSearch2Line } from "@remixicon/react";
+import SettingsDialog from "./SettingsDialog";
 
 export default function SearchBox() {
     const { query, setQuery, result } = useSearchStore();
@@ -12,12 +13,13 @@ export default function SearchBox() {
     return (
         <Card className={
             cn(
-                "transition-all duration-700 grow min-h-[20dvh]",
+                "transition-all duration-700 grow min-h-[20dvh] relative",
                 hasResult ? "shrink " : " flex flex-col justify-center items-center"
             )
         }>
 
-            <CardContent className="flex flex-col justify-center gap-2 items-center w-full">
+        <CardContent className="flex flex-col justify-center gap-2 items-center w-full ">
+                <SettingsDialog className="absolute top-4 right-4"/>
                 <h1 className=" text-nowrap text-4xl font-black">
                     Whatever Index
                 </h1>

@@ -23,3 +23,20 @@ pub fn get_database() -> rusqlite::Result<Connection> {
         .join("whatever-index.db");
     rusqlite::Connection::open(db_path)
 }
+
+pub fn drop_database() {
+    let Ok(conn) = get_database() else {
+        eprintln!("Database at this point should be working");
+        return;
+    };
+
+    match conn.execute(DROP_FILES_SQL, []) {
+        Ok(_) => {}
+        Err(e) => {
+            eprintln!("Error while droping database {}", e);
+            return;
+        }
+    }
+}
+
+const DROP_FILES_SQL: &str = include_str!("./queries/drop_files.sql");

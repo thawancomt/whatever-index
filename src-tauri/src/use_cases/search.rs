@@ -1,6 +1,6 @@
 use std::{collections::HashSet, path::PathBuf};
 
-use crate::db::tantivy::SearchService;
+use crate::tantivy_indexer::tantivy_searcher::SearchService;
 
 pub fn search_text(query: String) -> HashSet<PathBuf> {
     let service = SearchService::new();
