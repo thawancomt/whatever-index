@@ -23,7 +23,10 @@ impl SearchService {
         // O ReloadPolicy::OnCommit faz com que ele se atualize automaticamente
         // sempre que o IndexWriter fizer um .commit().
         let index = TANTIVY_INDEX
-            .get()
+            .read()
+            .expect("Error while getting tantivy in the search function")
+            .as_ref()
+            .cloned()
             .expect("Error while getting tantivy in the search function");
 
         let reader = index

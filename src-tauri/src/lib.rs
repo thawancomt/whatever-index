@@ -1,12 +1,9 @@
-use std::fs;
-
-use tantivy::Index;
 use tauri::Manager;
 
 use crate::{
     db::{
         database::init_database,
-        tantivy::{tantivy_schema_builder, TANTIVY_INDEX},
+        tantivy::init_tantivy_index,
     },
     paths::{DATA_DIR, RESOURCE_DIR},
 };
@@ -37,20 +34,10 @@ pub fn run() {
                 .set(data_dir.clone())
                 .expect("Error while setting datadir");
 
-            let tantivy_dir = data_dir.join("./tantivy_data");
+            let tantivy_dir = data_dir.join("tantivy_data");
 
-            if !tantivy_dir.exists() {
-                print!("Tantivy folder doesnt existis, creating it");
-                let _ = fs::create_dir_all(&tantivy_dir);
-                let _ = Index::create_in_dir(&tantivy_dir, tantivy_schema_builder());
-            };
-
-            let tantivy_index = Index::open_in_dir(tantivy_dir)
-                .expect("Error while opening the tantivy data folder");
-
-            TANTIVY_INDEX
-                .set(tantivy_index)
-                .expect("Error while setting tantivy during setup");
+            init_tantivy_index(&tantivy_dir)
+                .expect("Error while initializing the Tantivy data folder");
 
             match init_database() {
                 Ok(_database) => println!("Database initilized fine"),

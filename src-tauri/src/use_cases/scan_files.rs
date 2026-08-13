@@ -14,9 +14,8 @@ pub fn scan_files() -> AppResult<()> {
     let scanner_service = Scanner::new(cache_service);
 
     let files = scanner_service.scan_home_dir()?;
-    let only_modified = scanner_service.get_modified_files();
 
-    let total_files_size_bytes: i64 = files.clone().into_iter().map(|f| f.size_bytes).sum();
+    let _total_files_size_bytes: i64 = files.clone().into_iter().map(|f| f.size_bytes).sum();
 
     let files_by_extension = map_files_by_extension(&files);
 
