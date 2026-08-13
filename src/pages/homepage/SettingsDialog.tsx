@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { RiSettings2Line } from "@remixicon/react";
-import { useMutation } from "@tanstack/react-query";
+import { QueryClient, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { PropsWithChildren, useEffect, useState } from "react";
 
@@ -53,9 +53,28 @@ function SettingsSectionListItem({label, children, className} : SettingsSectionL
   </li>
 }
 
+interface AppSettings {
+  auto_scan : boolean
+  index_images : boolean
+  index_audio : boolean
+}
+
+function useSettings() {
+  return useQuery({
+    queryKey: ["settings"],
+    queryFn: async () => {
+      const result = await invoke<AppSettings>("get_settings");
+
+      return result as AppSettings
+    }
+  })
+}
+
+
 
 export default function SettingsDialog({ className }: SettingsDialogProps) {
   const [indexedCount, setIndexedCount] = useState(0);
+  const { data: settings } = useSettings();
 
   const { mutateAsync, status } = useMutation({
     mutationFn: async () => {
@@ -72,6 +91,38 @@ export default function SettingsDialog({ className }: SettingsDialogProps) {
     };
     fn();
   }, []);
+
+  const queryClient = useQueryClient();
+
+  const {mutateAsync : updateSettingsFn} = useMutation({
+    mutationFn: async (patch: AppSettings) => {
+          await invoke("toggle_settings", { patch });
+        },
+        onMutate: async (newSettings) => {
+          await queryClient.cancelQueries({ queryKey: ["settings"] });
+          const previousSettings = queryClient.getQueryData<AppSettings>(["settings"]);
+          queryClient.setQueryData(["settings"], newSettings);
+          return { previousSettings };
+        },
+        onError: (_err, _newSettings, context) => {
+          if (context?.previousSettings) {
+            queryClient.setQueryData(["settings"], context.previousSettings);
+          }
+        },
+        onSettled: () => {
+          queryClient.invalidateQueries({ queryKey: ["settings"] });
+        },
+  });
+
+
+  const updateSettings = async (key : keyof AppSettings, value : boolean) => {
+    if (!settings) return;
+    const patch = {
+      ...settings,
+      [key]: value
+    } satisfies AppSettings;
+    await updateSettingsFn(patch)
+  }
 
   return (
     <Dialog>
@@ -97,19 +148,24 @@ export default function SettingsDialog({ className }: SettingsDialogProps) {
         <SettingsSection title="Options">
           <SettingsSectionList>
             <SettingsSectionListItem label="Auto Re-scan" className="w-full  justify-between">
-              <Switch/>
+              <Switch checked={settings?.auto_scan} onCheckedChange={(e) => {
+                updateSettings("auto_scan", e)
+              }}/>
             </SettingsSectionListItem>
             <SettingsSectionListItem label="Scan photos" className="w-full  justify-between">
-              <Switch/>
+              <Switch checked={settings?.index_images} onCheckedChange={(e) => {
+                updateSettings("index_images", e)
+              }}/>
             </SettingsSectionListItem>
             <SettingsSectionListItem label="Scan audio files" className="w-full  justify-between">
-              <Switch/>
+              <Switch checked={settings?.index_audio}  onCheckedChange={(e) => {
+                updateSettings("index_audio", e)
+              }}/>
             </SettingsSectionListItem>
           </SettingsSectionList>
         </SettingsSection>
 
         <div>
-
         <Button
           disabled={isLoading}
           onClick={() => {

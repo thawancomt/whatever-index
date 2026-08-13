@@ -6,6 +6,9 @@ pub enum AppError {
     #[error("Data dir not setted")]
     DataDirNotSet,
 
+    #[error("Generic app error:")]
+    Generic(String),
+
     #[error("Database Error: {0}")]
     Sqlite(#[from] rusqlite::Error),
 
