@@ -20,7 +20,7 @@ export default function SearchBox() {
 
         <CardContent className="flex flex-col justify-center gap-2 items-center w-full ">
                 <SettingsDialog className="absolute top-4 right-4"/>
-                <h1 className=" text-nowrap text-4xl font-black">
+                <h1 className=" text-nowrap text-4xl font-black font-stack">
                     Whatever Index
                 </h1>
                 <div className="flex gap-2 items-center w-full  justify-center">
