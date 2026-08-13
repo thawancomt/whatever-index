@@ -66,6 +66,7 @@ pub fn run() {
             scanners::commands::search,
             utils::commands::open_file,
             db::commands::reset_index,
+            db::commands::get_total_files_indexed,
             settings::commands::get_settings,
             settings::commands::toggle_settings
         ])

@@ -1,6 +1,10 @@
 use std::{collections::HashSet, path::PathBuf};
 
-use crate::use_cases::{scan_files, search::search_text};
+use crate::{
+    app_error::errors::AppResult,
+    scanners::file_scanner::Scanner,
+    use_cases::{scan_files, search::search_text},
+};
 
 #[tauri::command(async)]
 pub fn re_scan() {

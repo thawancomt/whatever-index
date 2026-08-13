@@ -5,9 +5,11 @@ import { cn } from "@/lib/utils";
 import { useSearchStore } from "@/stores/search.store";
 import { RiSearch2Line } from "@remixicon/react";
 import SettingsDialog from "./SettingsDialog";
+import { useMetrics } from "@/stores/metrics.store";
 
 export default function SearchBox() {
-    const { query, setQuery, result } = useSearchStore();
+  const { query, setQuery, result } = useSearchStore();
+  const {total_files} = useMetrics()
 
     const hasResult = result && result.length > 0;
     return (
@@ -22,13 +24,17 @@ export default function SearchBox() {
                 <SettingsDialog className="absolute top-4 right-4"/>
                 <h1 className=" text-nowrap text-4xl font-black font-stack">
                     Whatever Index
-                </h1>
+          </h1>
+
+          <div>
+            { total_files}
+          </div>
                 <div className="flex gap-2 items-center w-full  justify-center">
                     <InputGroup className="sm:w-1/2 md:w-2/12 focus-within:w-6/12 focus-within:py-6 transition-all duration-700">
                         <InputGroupAddon>
                             <RiSearch2Line />
                         </InputGroupAddon>
-                        <InputGroupInput placeholder="Search for content in your files" value={query} onChange={e => {
+                        <InputGroupInput placeholder="Search" value={query} onChange={e => {
                             setQuery(e.target.value)
                         }}
                         />

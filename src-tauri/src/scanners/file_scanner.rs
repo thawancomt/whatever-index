@@ -103,6 +103,7 @@ impl Scanner {
             cache_service: file_cache_service,
         };
     }
+
     pub fn scan_home_dir(&self) -> AppResult<Vec<File>> {
         let Some(home_dir) = env::home_dir() else {
             return Err(AppError::DataDirNotSet);
