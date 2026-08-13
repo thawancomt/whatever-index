@@ -15,9 +15,14 @@ pub struct IndexerService {
 
 impl IndexerService {
     pub fn new() -> AppResult<Self> {
-        let global_indexer = TANTIVY_INDEX.get().ok_or(AppError::TantivyIndexError(
-            "Tantivy not can be oppened".into(),
-        ))?;
+        let global_indexer = TANTIVY_INDEX
+            .read()
+            .map_err(|_| AppError::TantivyIndexError("Tantivy index lock poisoned".into()))?
+            .as_ref()
+            .cloned()
+            .ok_or(AppError::TantivyIndexError(
+                "Tantivy not can be oppened".into(),
+            ))?;
 
         let tantivy_writer = global_indexer.writer(50_000_000)?;
 

@@ -36,7 +36,7 @@ fn filter_exclusion_folders(_path: &Path) -> bool {
 }
 
 fn exclusion_pipeline(path: impl AsRef<Path>) -> bool {
-    !is_hidden(&path) || filter_exclusion_folders(&path)
+    !is_hidden(path.as_ref()) || filter_exclusion_folders(path.as_ref())
 }
 
 fn load_mtime_cache() -> Option<HashMap<PathBuf, i64>> {
@@ -137,7 +137,7 @@ impl Scanner {
                 };
 
                 if *mtime != f.mtime {
-                    return Some(*f);
+                    return Some(f.clone());
                 }
 
                 None
