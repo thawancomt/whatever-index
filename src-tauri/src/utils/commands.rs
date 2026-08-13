@@ -14,7 +14,7 @@ pub fn open_file(path: String) -> Result<(), String> {
     {
         use std::process::Command;
 
-        let _ = Command::new("ii")
+        let _ = Command::new("OpenWith.exe")
             .arg(path)
             .spawn()
             .map_err(|e| println!("Error while trying to opening: {}", e));

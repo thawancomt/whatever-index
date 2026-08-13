@@ -3,6 +3,7 @@ use rusqlite::Connection;
 use crate::db::{database::get_database, types::file::File};
 
 pub trait SQLRepository {
+    const conn: Connection;
     fn insert_files_batch(&self, files: &[File]) -> rusqlite::Result<()>;
 }
 

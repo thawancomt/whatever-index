@@ -2,7 +2,7 @@ use std::fs;
 
 use crate::{
     app_error::errors::{AppError, AppResult},
-    db::{database::drop_database, tantivy::TANTIVY_INDEX},
+    db::database::drop_database,
     paths::DATA_DIR,
     repositories::commands::drop_indexing,
     tantivy_indexer::tantivy_indexer::IndexerService,

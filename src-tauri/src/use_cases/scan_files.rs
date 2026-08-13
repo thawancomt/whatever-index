@@ -1,30 +1,24 @@
 use crate::{
-    app_error::errors::{AppError, AppResult},
-    db::tantivy::TANTIVY_INDEX,
+    app_error::errors::AppResult,
     extractors::extractor::{extract_content_from_files, ExtractedContentFromFilesResponse},
-    repositories::sqlite_repository::{SQLRepository, SqliteRepository},
-    scanners::file_scanner::{map_files_by_extension, scanner},
+    repositories::{
+        file_cache_repository::FileCacheRepository,
+        sqlite_repository::{SQLRepository, SqliteRepository},
+    },
+    scanners::file_scanner::{map_files_by_extension, scanner, Scanner},
     tantivy_indexer::tantivy_indexer::IndexerService,
 };
 
-pub fn scan_files() {
-    println!("Calling use case, scan");
-    let files = scanner().unwrap_or_default();
+pub fn scan_files() -> AppResult<()> {
+    let cache_service = FileCacheRepository::new()?;
+    let scanner_service = Scanner::new(cache_service);
+
+    let files = scanner_service.scan_home_dir()?;
+    let only_modified = scanner_service.get_modified_files();
 
     let total_files_size_bytes: i64 = files.clone().into_iter().map(|f| f.size_bytes).sum();
 
-    println!(
-        "Found: ({}) files, total size: ({} MB)",
-        files.len(),
-        total_files_size_bytes / (1024 * 1024)
-    );
-
     let files_by_extension = map_files_by_extension(&files);
-
-    println!(
-        "Found {} differents extensions",
-        files_by_extension.keys().len()
-    );
 
     let content_by_file = extract_content_from_files(files_by_extension);
 
@@ -50,6 +44,8 @@ pub fn scan_files() {
             eprintln!("Error while instanciating SqliteRepo {}", e);
         }
     };
+
+    Ok(())
 }
 
 fn index_files_to_tantivy(data: &ExtractedContentFromFilesResponse) -> AppResult<()> {
