@@ -15,9 +15,11 @@ pub fn scan_files() -> AppResult<()> {
 
     let files = scanner_service.scan_home_dir()?;
 
-    let _total_files_size_bytes: i64 = files.clone().into_iter().map(|f| f.size_bytes).sum();
+    let only_modified = scanner_service.get_modified_files(files)?;
 
-    let files_by_extension = map_files_by_extension(&files);
+    let _total_files_size_bytes: i64 = only_modified.clone().into_iter().map(|f| f.size_bytes).sum();
+
+    let files_by_extension = map_files_by_extension(&only_modified);
 
     let content_by_file = extract_content_from_files(files_by_extension);
 
@@ -30,9 +32,9 @@ pub fn scan_files() -> AppResult<()> {
 
     match SqliteRepository::new() {
         Ok(repo) => {
-            match repo.insert_files_batch(&files) {
+            match repo.insert_files_batch(&only_modified) {
                 Ok(_) => {
-                    println!("Files persisted : {}", files.len())
+                    println!("Files persisted : {}", only_modified.len())
                 }
                 Err(e) => {
                     eprintln!("Error while persisting files, {e}")

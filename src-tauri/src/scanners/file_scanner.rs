@@ -126,7 +126,7 @@ impl Scanner {
         Ok(valid_files)
     }
 
-    pub fn get_modified_files(&self, files: Vec<&File>) -> AppResult<Vec<File>> {
+    pub fn get_modified_files(&self, files: Vec<File>) -> AppResult<Vec<File>> {
         let cached_mtime = self.cache_service.retrieve_mtime()?;
 
         let modified_files: Vec<File> = files
