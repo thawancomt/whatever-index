@@ -1,18 +1,20 @@
+use futures_util::stream::Iter;
 use rayon::prelude::*;
 use std::{
     collections::HashMap,
     env::{self},
-    path::{Path, PathBuf},
+    path::Path,
 };
 use walkdir::DirEntry;
 
 use crate::{
     app_error::errors::{AppError, AppResult},
-    db::{database::get_database, types::file::File},
+    db::types::file::File,
     repositories::file_cache_repository::{FileCacheRepository, FileCacheService},
+    settings::commands::get_settings,
 };
 
-pub type FilesByExtensionResponse = HashMap<String, Vec<PathBuf>>;
+pub type FilesByExtensionResponse = HashMap<String, Vec<File>>;
 
 fn is_hidden(path: impl AsRef<Path>) -> bool {
     path.as_ref()
@@ -36,48 +38,19 @@ fn filter_exclusion_folders(_path: &Path) -> bool {
 }
 
 fn exclusion_pipeline(path: impl AsRef<Path>) -> bool {
-    !is_hidden(path.as_ref()) || filter_exclusion_folders(path.as_ref())
-}
+    let mut condition = !is_hidden(path.as_ref()) && filter_exclusion_folders(path.as_ref());
 
-fn load_mtime_cache() -> Option<HashMap<PathBuf, i64>> {
-    let conn = get_database().ok()?;
-    let mut stmt = conn
-        .prepare("SELECT path, CAST(mtime AS INTEGER) FROM files")
-        .ok()?;
+    if let Ok(settings) = get_settings() {
+        if !settings.index_images {
+            let media_extensions = ["png", "jpg", "jpeg"];
+            if let Some(ext) = path.as_ref().extension() {
+                condition = condition
+                    && !media_extensions.contains(&ext.to_string_lossy().to_lowercase().as_str());
+            }
+        }
+    }
 
-    let rows = stmt
-        .query_map([], |row| {
-            let path_str: String = row.get(0)?;
-            let mtime: i64 = row.get(1)?;
-            Ok((PathBuf::from(path_str), mtime))
-        })
-        .ok()?;
-
-    // Ignora linhas com erro silenciosamente mantendo o código enxuto
-    Some(rows.filter_map(Result::ok).collect())
-}
-
-pub fn scanner() -> Option<Vec<File>> {
-    let root = env::home_dir()?;
-    let cache = load_mtime_cache()?;
-
-    println!("Root path: {}", root.display());
-    println!("Loaded mtime cache: {}", cache.len());
-
-    let files: Vec<File> = walkdir::WalkDir::new(root)
-        .into_iter()
-        .filter_entry(|f| !is_hidden(f.path()))
-        .filter_map(Result::ok)
-        .par_bridge()
-        .filter(|f| f.path().is_file())
-        .filter_map(|f| {
-            File::from_path_using_cache(&f.into_path(), &cache)
-                .ok()
-                .flatten()
-        })
-        .collect();
-
-    Some(files)
+    condition
 }
 
 pub fn map_files_by_extension(paths: &[File]) -> FilesByExtensionResponse {
@@ -87,7 +60,7 @@ pub fn map_files_by_extension(paths: &[File]) -> FilesByExtensionResponse {
         files_by_extension
             .entry(file.extension.to_string())
             .or_default()
-            .push(file.path);
+            .push(file);
     }
 
     files_by_extension
@@ -104,46 +77,38 @@ impl Scanner {
         };
     }
 
-    pub fn scan_home_dir(&self) -> AppResult<Vec<File>> {
+    pub fn scan_home_dir(&self) -> AppResult<impl Iterator<Item = File>> {
         let Some(home_dir) = env::home_dir() else {
             return Err(AppError::DataDirNotSet);
         };
 
         // all entries found on the home directory
-        let founded_entries: Vec<DirEntry> = walkdir::WalkDir::new(home_dir)
+        let founded_entries = walkdir::WalkDir::new(home_dir)
             .into_iter()
-            .filter_entry(|f| !is_hidden(f.path()))
+            .filter_entry(|f| exclusion_pipeline(f.path()))
             .filter_map(Result::ok)
-            .collect();
-
-        let valid_files: Vec<File> = founded_entries
-            .into_iter()
-            .par_bridge()
             .filter(|f| f.path().is_file())
-            .filter_map(|f| File::new(f.path()).ok().flatten())
-            .collect();
+            .filter_map(|f| File::new(f.path()).ok().flatten());
 
-        Ok(valid_files)
+        Ok(founded_entries)
     }
 
-    pub fn get_modified_files(&self, files: Vec<File>) -> AppResult<Vec<File>> {
+    pub fn get_modified_files(
+        &self,
+        files: impl Iterator<Item = File>,
+    ) -> AppResult<impl Iterator<Item = File>> {
         let cached_mtime = self.cache_service.retrieve_mtime()?;
 
-        let modified_files: Vec<File> = files
-            .into_iter()
-            .filter_map(|f| {
-                let key = f.path.to_str()?;
-                let Some(mtime) = cached_mtime.get(key) else {
-                    return None;
-                };
+        let modified_files = files.filter(move |f| {
+            let Some(key) = f.path.to_str() else {
+                return false;
+            };
 
-                if *mtime != f.mtime {
-                    return Some(f.clone());
-                }
-
-                None
-            })
-            .collect();
+            match cached_mtime.get(key) {
+                Some(cached) => f.mtime != *cached,
+                None => true,
+            }
+        });
 
         Ok(modified_files)
     }

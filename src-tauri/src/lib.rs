@@ -67,8 +67,10 @@ pub fn run() {
             utils::commands::open_file,
             db::commands::reset_index,
             db::commands::get_total_files_indexed,
+            db::commands::get_total_by_extension,
             settings::commands::get_settings,
-            settings::commands::toggle_settings
+            settings::commands::toggle_settings,
+            adapters::ocr::commands::get_ocr_models_status,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

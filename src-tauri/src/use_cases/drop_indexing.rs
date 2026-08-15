@@ -27,13 +27,15 @@ pub fn drop_all() -> AppResult<()> {
     drop_indexing();
 
     if tantivy_dir.exists() {
-        fs::remove_dir_all(&tantivy_dir)
-            .map_err(|e| AppError::Io(e))?;
+        fs::remove_dir_all(&tantivy_dir).map_err(|e| AppError::Io(e))?;
     }
 
     reset_tantivy_index();
-    init_tantivy_index(&tantivy_dir)
-        .map_err(|e| AppError::TantivyIndexError(format!("Error while reinitializing Tantivy after reset: {e}")))?;
+    init_tantivy_index(&tantivy_dir).map_err(|e| {
+        AppError::TantivyIndexError(format!(
+            "Error while reinitializing Tantivy after reset: {e}"
+        ))
+    })?;
 
     println!("Every index dropped");
 

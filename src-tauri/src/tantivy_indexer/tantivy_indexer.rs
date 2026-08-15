@@ -4,7 +4,10 @@ use tantivy::{schema::Schema, Index, IndexWriter, Term};
 
 use crate::{
     app_error::errors::{AppError, AppResult},
-    db::tantivy::{tantivy_schema_builder, TANTIVY_INDEX},
+    db::{
+        tantivy::{tantivy_schema_builder, TANTIVY_INDEX},
+        types::file::File,
+    },
     paths::DATA_DIR,
 };
 
@@ -34,25 +37,27 @@ impl IndexerService {
         })
     }
 
-    pub fn index_files(&mut self, files: &HashMap<PathBuf, String>) -> AppResult<()> {
+    pub fn index_files(&mut self, files: &HashMap<File, String>) -> AppResult<()> {
         let path_field = self.schema.get_field("path")?;
 
         let content_field = self.schema.get_field("content")?;
+        let ngram_field = self.schema.get_field("content_ngram")?;
 
         let file_name_field = self.schema.get_field("file_name")?;
 
         for (file, content) in files {
             let mut doc = tantivy::TantivyDocument::default();
 
-            let term = Term::from_field_text(path_field, &file.to_string_lossy());
+            let term = Term::from_field_text(path_field, &file.path.to_string_lossy());
 
             self.tantivy_writer.delete_term(term);
 
-            doc.add_text(path_field, file.to_string_lossy());
+            doc.add_text(path_field, file.path.to_string_lossy());
             doc.add_text(content_field, content);
+            doc.add_text(ngram_field, content);
             doc.add_text(
                 file_name_field,
-                file.file_name().unwrap_or_default().to_string_lossy(),
+                file.path.file_name().unwrap_or_default().to_string_lossy(),
             );
             self.tantivy_writer.add_document(doc)?;
         }

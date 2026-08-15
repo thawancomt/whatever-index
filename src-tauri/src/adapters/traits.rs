@@ -1,5 +1,7 @@
-use std::{collections::HashMap, path::PathBuf};
+use std::collections::HashMap;
+
+use crate::db::types::file::File;
 
 pub trait Adapter {
-    fn ingest(&self, paths: Vec<PathBuf>) -> HashMap<PathBuf, String>;
+    fn ingest(&self, paths: Vec<File>) -> HashMap<File, String>;
 }

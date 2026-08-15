@@ -5,7 +5,7 @@ use crate::{
         file_cache_repository::FileCacheRepository,
         sqlite_repository::{SQLRepository, SqliteRepository},
     },
-    scanners::file_scanner::{map_files_by_extension, scanner, Scanner},
+    scanners::file_scanner::{map_files_by_extension, Scanner},
     tantivy_indexer::tantivy_indexer::IndexerService,
 };
 
@@ -14,37 +14,50 @@ pub fn scan_files() -> AppResult<()> {
     let scanner_service = Scanner::new(cache_service);
 
     let files = scanner_service.scan_home_dir()?;
+    let mut only_modified = scanner_service.get_modified_files(files)?;
 
-    let only_modified = scanner_service.get_modified_files(files)?;
+    loop {
+        let files_batch = only_modified.by_ref().take(50).collect::<Vec<_>>();
 
-    let _total_files_size_bytes: i64 = only_modified.clone().into_iter().map(|f| f.size_bytes).sum();
-
-    let files_by_extension = map_files_by_extension(&only_modified);
-
-    let content_by_file = extract_content_from_files(files_by_extension);
-
-    match index_files_to_tantivy(&content_by_file) {
-        Ok(_) => println!("Files, indexed"),
-        Err(e) => {
-            eprintln!("{e}")
+        if files_batch.is_empty() {
+            break;
         }
-    };
 
-    match SqliteRepository::new() {
-        Ok(repo) => {
-            match repo.insert_files_batch(&only_modified) {
-                Ok(_) => {
-                    println!("Files persisted : {}", only_modified.len())
-                }
-                Err(e) => {
-                    eprintln!("Error while persisting files, {e}")
-                }
-            };
-        }
-        Err(e) => {
-            eprintln!("Error while instanciating SqliteRepo {}", e);
-        }
-    };
+        let files_by_extension = map_files_by_extension(&files_batch);
+
+        println!(
+            "Files by extension: {:?}",
+            files_by_extension
+                .iter()
+                .map(|(ext, files)| (ext, files.len()))
+                .collect::<Vec<_>>()
+        );
+
+        let content_by_file = extract_content_from_files(files_by_extension)?;
+
+        match index_files_to_tantivy(&content_by_file) {
+            Ok(_) => println!("Files, indexed"),
+            Err(e) => {
+                eprintln!("{e}")
+            }
+        };
+
+        match SqliteRepository::new() {
+            Ok(repo) => {
+                match repo.insert_files_batch(&files_batch) {
+                    Ok(_) => {
+                        println!("Files persisted : {}", files_batch.len())
+                    }
+                    Err(e) => {
+                        eprintln!("Error while persisting files, {e}")
+                    }
+                };
+            }
+            Err(e) => {
+                eprintln!("Error while instanciating SqliteRepo {}", e);
+            }
+        };
+    }
 
     Ok(())
 }

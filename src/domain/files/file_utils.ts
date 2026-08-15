@@ -1,4 +1,4 @@
-import { RemixiconComponentType, RiFileCodeLine, RiFileLine, RiFilePdf2Line } from "@remixicon/react"
+import { RemixiconComponentType, RiFileCodeLine, RiFileLine, RiFilePdf2Line, RiPlayListFill } from "@remixicon/react"
 
 
 
@@ -11,10 +11,11 @@ export enum ExtensionDomains {
     Textable = "Textable",
     Code = "Code",
     Document = "Document",
+    Media = "Media",
     unknown = "unknown"
 }
 
-const ExtensionMapper = {
+const ExtensionMapper : Record<string, ExtensionType> = {
     "txt": {
         type: [ExtensionDomains.Textable],
         icon: RiFileLine
@@ -67,15 +68,23 @@ const ExtensionMapper = {
     "xlsx": {
         type: [ExtensionDomains.Document],
         icon: RiFileLine
-    },
+  },
 
+  "jpg": {
+    type: [ExtensionDomains.Media],
+    icon : RiPlayListFill
+  },
+  "png": {
+    type: [ExtensionDomains.Media],
+    icon : RiPlayListFill
+    }
 } as const
 
 type KnownExtensions = keyof typeof ExtensionMapper
 
 
 export const getExtension = (file: string): KnownExtensions => {
-    return file.split('.').pop()?.toLowerCase() as KnownExtensions || undefined
+    return file.split('.').pop()?.toLowerCase() as KnownExtensions
 }
 
 export const getFileDomain = (file: string): typeof ExtensionMapper[keyof typeof ExtensionMapper] => {

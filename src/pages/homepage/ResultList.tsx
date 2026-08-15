@@ -82,7 +82,7 @@ export default function ResultList() {
                     <>
                         {
                             hasResult && searchResult.map(fileEntry => {
-                                return <FileResultEntry path={fileEntry} />
+                                return <FileResultEntry key={fileEntry} path={fileEntry} />
                             })
                         }
 

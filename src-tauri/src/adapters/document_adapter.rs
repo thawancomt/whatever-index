@@ -1,6 +1,10 @@
-use crate::{adapters::traits::Adapter, paths::get_resource_dir};
+use crate::{
+    adapters::{textable_adapters::TextableAdapter, traits::Adapter},
+    db::types::file::File,
+    paths::get_resource_dir,
+};
 use quick_xml::{events::Event, Reader};
-use std::{collections::HashMap, fs::File, io::Read, path::PathBuf, process::Command};
+use std::{collections::HashMap, io::Read, process::Command};
 use zip::ZipArchive;
 
 pub struct DocumentAdapter;
@@ -8,17 +12,12 @@ pub struct PDFAdapter;
 pub struct DOCXApter;
 
 impl Adapter for DocumentAdapter {
-    fn ingest(&self, paths: Vec<PathBuf>) -> std::collections::HashMap<PathBuf, String> {
-        let mut files_by_extension: HashMap<String, Vec<PathBuf>> = HashMap::new();
+    fn ingest(&self, paths: Vec<File>) -> HashMap<File, String> {
+        let mut files_by_extension: HashMap<String, Vec<File>> = HashMap::new();
 
         for path in paths {
-            let extension = match path.extension() {
-                Some(ext) => ext,
-                None => continue,
-            };
-
             files_by_extension
-                .entry(extension.to_string_lossy().to_string())
+                .entry(path.extension.to_string())
                 .or_insert_with(Vec::new)
                 .push(path);
         }
@@ -33,7 +32,7 @@ impl Adapter for DocumentAdapter {
                 "docx" => {
                     content_by_file.extend(DOCXApter.ingest(paths));
                 }
-                _ => {}
+                _ => content_by_file.extend(TextableAdapter.ingest(paths)),
             }
         }
 
@@ -42,7 +41,7 @@ impl Adapter for DocumentAdapter {
 }
 
 impl Adapter for PDFAdapter {
-    fn ingest(&self, paths: Vec<PathBuf>) -> HashMap<PathBuf, String> {
+    fn ingest(&self, paths: Vec<File>) -> HashMap<File, String> {
         let python_pdf_extractor_dir = get_resource_dir().join("python-adapter");
 
         let mut cmd = Command::new("uv");
@@ -80,11 +79,11 @@ impl Adapter for PDFAdapter {
 }
 
 impl Adapter for DOCXApter {
-    fn ingest(&self, paths: Vec<PathBuf>) -> HashMap<PathBuf, String> {
+    fn ingest(&self, paths: Vec<File>) -> HashMap<File, String> {
         let mut content_by_file = HashMap::new();
 
         for path in paths {
-            let Ok(file) = File::open(&path) else {
+            let Ok(file) = std::fs::File::open(&path.path) else {
                 continue;
             };
 

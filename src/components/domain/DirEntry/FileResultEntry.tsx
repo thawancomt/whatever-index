@@ -2,10 +2,19 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Item, ItemActions, ItemContent, ItemHeader, ItemMedia, ItemTitle } from "@/components/ui/item";
 import { getFileDomain } from "@/domain/files/file_utils";
-import { invoke } from "@tauri-apps/api/core";
+import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 interface FileResultEntryProps {
     path: string,
     content?: string
+}
+
+function isMedia(path: string) {
+  const v = path.split(".") || [];
+  if (["jpg", "png"].includes(v.pop() || "")) {
+    return true
+  }
+
+  return false
 }
 
 export default function FileResultEntry({ path, content }: FileResultEntryProps) {
@@ -14,6 +23,9 @@ export default function FileResultEntry({ path, content }: FileResultEntryProps)
         await invoke("open_file", { path })
     }
 
+    const hasSrc = isMedia(path)
+
+    const src = hasSrc ? convertFileSrc(path) : null
 
     const {
         type,
@@ -22,7 +34,12 @@ export default function FileResultEntry({ path, content }: FileResultEntryProps)
 
     return (
         <Item variant={"muted"}>
-            <ItemMedia>
+        <ItemMedia>
+          {
+            hasSrc && src && (
+              <img src={src}  className="w-44"/>
+            )
+              }
                 {<Icon />}
             </ItemMedia>
             <ItemHeader>

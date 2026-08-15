@@ -1,11 +1,11 @@
 use serde::{Deserialize, Serialize};
 use std::{
-    collections::HashMap,
+    ffi::OsStr,
     path::{Path, PathBuf},
     time::{SystemTime, UNIX_EPOCH},
 };
 
-#[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq)]
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq, Hash)]
 #[serde(rename_all = "lowercase")]
 pub enum SupportedExt {
     Txt,
@@ -21,6 +21,10 @@ pub enum SupportedExt {
     Tsx,
     Js,
     Jsx,
+    Jpg,
+    Png,
+    Webp,
+    Jpeg,
 }
 
 impl SupportedExt {
@@ -40,6 +44,13 @@ impl SupportedExt {
             "env" => Some(Self::Env),
             "rs" => Some(Self::Rs),
             "py" => Some(Self::Py),
+            "go" => Some(Self::Go),
+            "ts" => Some(Self::Ts),
+            "tsx" => Some(Self::Tsx),
+            "png" => Some(Self::Png),
+            "jpg" => Some(Self::Jpg),
+            "jpeg" => Some(Self::Jpeg),
+            "webp" => Some(Self::Webp),
             _ => None,
         }
     }
@@ -59,6 +70,10 @@ impl SupportedExt {
             Self::Js => "js",
             Self::Jsx => "jsx",
             Self::Txt => "txt",
+            Self::Png => "png",
+            Self::Jpg => "jpg",
+            Self::Webp => "webp",
+            Self::Jpeg => "jpeg",
         }
     }
 }
@@ -69,7 +84,7 @@ impl std::fmt::Display for SupportedExt {
     }
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone, Eq, PartialEq, Hash)]
 pub struct File {
     pub id: Option<i64>,
     pub path: PathBuf,
@@ -91,15 +106,14 @@ fn hash_file(path: impl AsRef<Path>) -> String {
 }
 
 impl File {
-    pub fn from_path_using_cache(
-        path: impl AsRef<Path>,
-        cache: &HashMap<PathBuf, i64>,
-    ) -> std::io::Result<Option<Self>> {
+    pub fn new(path: impl AsRef<Path>) -> std::io::Result<Option<Self>> {
         let path = path.as_ref();
 
         let Some(extension) = SupportedExt::parse(path) else {
             return Ok(None);
         };
+
+        println!("Creating File struct for path: {:?}", path);
 
         let metadata = path.metadata()?;
 
@@ -109,13 +123,6 @@ impl File {
             .unwrap_or_default()
             .as_secs() as i64;
 
-        if let Some(&cached_mtime) = cache.get(path) {
-            if mtime <= cached_mtime {
-                // File hasn't changed. Skip it entirely.
-                return Ok(None);
-            }
-        }
-
         let size_bytes = metadata.len() as i64;
 
         let indexed_at = SystemTime::now()
@@ -124,6 +131,7 @@ impl File {
             .as_secs() as i64;
 
         let hash = hash_file(path);
+
         Ok(Some(Self {
             id: None,
             path: path.into(),
@@ -134,38 +142,10 @@ impl File {
             size_bytes,
         }))
     }
+}
 
-    pub fn new(path: impl AsRef<Path>) -> std::io::Result<Option<Self>> {
-        let path = path.as_ref();
-
-        let Some(extension) = SupportedExt::parse(path) else {
-            return Ok(None);
-        };
-
-        let metadata = path.metadata()?;
-
-        let mtime = metadata
-            .modified()?
-            .duration_since(UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_secs() as i64;
-
-        let size_bytes = metadata.len() as i64;
-
-        let indexed_at = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_secs() as i64;
-
-        let hash = hash_file(path);
-        Ok(Some(Self {
-            id: None,
-            path: path.into(),
-            extension: extension,
-            content_hash: hash,
-            indexed_at,
-            mtime,
-            size_bytes,
-        }))
+impl AsRef<OsStr> for File {
+    fn as_ref(&self) -> &OsStr {
+        self.path.as_os_str()
     }
 }
