@@ -61,11 +61,14 @@ impl SearchService {
 
         // 3. Interpreta a string de busca do usuário
         // Se a string for inválida (ex: erro de sintaxe do usuário), podemos retornar erro ou tratar
-        let query = match query_parser.parse_query(query_string) {
+
+        let safe_query_string = query_string.replace(|c: char| !c.is_alphanumeric(), " ");
+
+        let query = match query_parser.parse_query(&safe_query_string) {
             Ok(q) => q,
             Err(_) => {
-                println!("Malformed query: {}", query_string);
-                return Ok(vec![]);
+                println!("Malformed query: {}", safe_query_string);
+                return Ok(vec![]); // Retorna um vetor vazio se a query for malformada
             }
         };
 

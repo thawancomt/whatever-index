@@ -1,13 +1,12 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
-import { listen } from "@tauri-apps/api/event";
-import { useEffect, useTransition } from "react";
+import { useEffect} from "react";
 import { toast } from "sonner";
 import Homepage from "./pages/homepage/Homepage";
 import { useMetrics } from "./stores/metrics.store";
-import { AppEvent } from "./domain/events";
-import { DownloadProgress } from "./domain/types/download.type";
+import TextableContenDialog from "./components/domain/DirEntry/TextableContentDialog";
+import { setupListeners } from "./domain/listeners";
 
 const queryClient = new QueryClient()
 
@@ -44,11 +43,6 @@ function App() {
     }
   }
 
-
-
-  const initListeners = async () => {
-  }
-
   useEffect(() => {
     const warmUp = async () => {
       const toastId = toast.loading("Warming up the app, please wait...")
@@ -57,25 +51,14 @@ function App() {
       toast.success("App is ready!", { id: toastId })
     }
     warmUp();
-    initListeners();
+    setupListeners()
   }, [])
-
-  document.documentElement.classList.toggle(
-    "dark",
-    localStorage.theme === "dark" ||
-      (!("theme" in localStorage) && window.matchMedia("(prefers-color-scheme: dark)").matches),
-  );
-  // Whenever the user explicitly chooses light mode
-  localStorage.theme = "light";
-  // Whenever the user explicitly chooses dark mode
-  localStorage.theme = "dark";
-  // Whenever the user explicitly chooses to respect the OS preference
-  localStorage.removeItem("theme");
 
   return (
     <div className="w-screen h-screen flex flex-col">
       <QueryClientProvider client={queryClient}>
         <Homepage />
+        <TextableContenDialog key={"teste"}/>
       </QueryClientProvider>
     </div>
   );

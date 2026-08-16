@@ -1,4 +1,4 @@
-use tauri::Manager;
+use tauri::{AppHandle, Manager};
 
 use crate::{
     db::{database::init_database, tantivy::init_tantivy_index},
@@ -9,6 +9,7 @@ use crate::{
 mod adapters;
 mod app_error;
 mod db;
+mod emitter;
 mod extractors;
 mod paths;
 mod repositories;
@@ -18,10 +19,18 @@ mod tantivy_indexer;
 mod use_cases;
 mod utils;
 
+struct AppState {
+    pub handle: AppHandle,
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .setup(|app| {
+            app.manage(AppState {
+                handle: app.handle().clone(),
+            });
+
             let resource_dir = app.path().resource_dir().expect("Missing resource dir");
             let data_dir = app.path().app_data_dir().expect("Missing data dir");
 
@@ -68,6 +77,8 @@ pub fn run() {
             db::commands::reset_index,
             db::commands::get_total_files_indexed,
             db::commands::get_total_by_extension,
+            db::commands::get_files_by_extension,
+            db::commands::get_file_content,
             settings::commands::get_settings,
             settings::commands::toggle_settings,
             adapters::ocr::commands::get_ocr_models_status,

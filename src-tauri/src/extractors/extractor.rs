@@ -33,7 +33,8 @@ pub fn extract_content_from_files(
             "pdf" | "docx" => {
                 content_by_path.extend(DocumentAdapter.ingest(files));
             }
-            "txt" | "md" | "log" | "env" | "ini" | "conf" | "toml" | "yml" | "yaml" | "json" => {
+            "txt" | "md" | "log" | "env" | "ini" | "conf" | "toml" | "yml" | "yaml" | "json"
+            | "rs" | "py" | "js" | "html" | "css" => {
                 content_by_path.extend(TextableAdapter.ingest(files));
             }
             "png" | "jpg" | "jpeg" | "webp" => {

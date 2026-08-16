@@ -36,6 +36,18 @@ pub fn init_tantivy_index(index_dir: &Path) -> Result<(), String> {
             .map_err(|e| format!("Error while creating the Tantivy folder: {e}"))?;
     }
 
+    let should_recreate_index = Index::open_in_dir(index_dir)
+        .ok()
+        .map(|index| index.schema().get_field("content_ngram").is_err())
+        .unwrap_or(false);
+
+    if should_recreate_index {
+        fs::remove_dir_all(index_dir)
+            .map_err(|e| format!("Error while removing old Tantivy index: {e}"))?;
+        fs::create_dir_all(index_dir)
+            .map_err(|e| format!("Error while recreating the Tantivy folder: {e}"))?;
+    }
+
     let index = match Index::open_in_dir(index_dir) {
         Ok(index) => index,
         Err(_) => Index::create_in_dir(index_dir, tantivy_schema_builder())

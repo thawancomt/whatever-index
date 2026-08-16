@@ -2,6 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Item, ItemActions, ItemContent, ItemHeader, ItemMedia, ItemTitle } from "@/components/ui/item";
 import { getFileDomain } from "@/domain/files/file_utils";
+import { useTextableContentStore } from "@/stores/textableContent.store";
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 interface FileResultEntryProps {
     path: string,
@@ -18,7 +19,7 @@ function isMedia(path: string) {
 }
 
 export default function FileResultEntry({ path, content }: FileResultEntryProps) {
-
+    const {open} = useTextableContentStore()
     const handleOpenFile = async () => {
         await invoke("open_file", { path })
     }
@@ -42,7 +43,7 @@ export default function FileResultEntry({ path, content }: FileResultEntryProps)
               }
                 {<Icon />}
             </ItemMedia>
-            <ItemHeader>
+            <ItemHeader onClick={() => open(path)}>
                 <ItemTitle className="font-semibold flex flex-col items-start">
                     {path}
 

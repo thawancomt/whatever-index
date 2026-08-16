@@ -1,3 +1,4 @@
+import File from "@/domain/types/File";
 import { useQuery } from "@tanstack/react-query"
 import { invoke } from "@tauri-apps/api/core"
 import { useEffect, useState } from "react";
@@ -26,4 +27,13 @@ export function useSearch(query: string) {
         enabled: !!debouncedQuery || !!query,
         staleTime: 1000 * 60 * 60, // 60 minutes
     })
+}
+
+export function useSearchFilesByExtension(extension: string) {
+  return useQuery({
+    queryKey: ["search_by_extension", extension],
+    queryFn: async () => {
+      return await invoke<File[]>("get_files_by_extension", {extension})
+    }
+  })
 }

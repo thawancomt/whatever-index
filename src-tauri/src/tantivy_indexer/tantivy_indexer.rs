@@ -1,13 +1,10 @@
-use std::{collections::HashMap, fs, path::PathBuf};
+use std::{collections::HashMap, fs};
 
-use tantivy::{schema::Schema, Index, IndexWriter, Term};
+use tantivy::{schema::Schema, IndexWriter, Term};
 
 use crate::{
     app_error::errors::{AppError, AppResult},
-    db::{
-        tantivy::{tantivy_schema_builder, TANTIVY_INDEX},
-        types::file::File,
-    },
+    db::{tantivy::TANTIVY_INDEX, types::file::File},
     paths::DATA_DIR,
 };
 
@@ -29,7 +26,7 @@ impl IndexerService {
 
         let tantivy_writer = global_indexer.writer(50_000_000)?;
 
-        let schema = tantivy_schema_builder();
+        let schema = global_indexer.schema();
 
         Ok(Self {
             tantivy_writer,
@@ -41,7 +38,7 @@ impl IndexerService {
         let path_field = self.schema.get_field("path")?;
 
         let content_field = self.schema.get_field("content")?;
-        let ngram_field = self.schema.get_field("content_ngram")?;
+        let content_ngram_field = self.schema.get_field("content_ngram")?;
 
         let file_name_field = self.schema.get_field("file_name")?;
 
@@ -54,7 +51,7 @@ impl IndexerService {
 
             doc.add_text(path_field, file.path.to_string_lossy());
             doc.add_text(content_field, content);
-            doc.add_text(ngram_field, content);
+            doc.add_text(content_ngram_field, content);
             doc.add_text(
                 file_name_field,
                 file.path.file_name().unwrap_or_default().to_string_lossy(),

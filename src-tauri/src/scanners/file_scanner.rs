@@ -1,11 +1,9 @@
-use futures_util::stream::Iter;
 use rayon::prelude::*;
 use std::{
     collections::HashMap,
     env::{self},
     path::Path,
 };
-use walkdir::DirEntry;
 
 use crate::{
     app_error::errors::{AppError, AppResult},

@@ -1,22 +1,39 @@
-import { DownloadProgress } from "./types/download.type";
-
-type APP_EVENT = {
-    OCR_MODEL_DOWNLOAD_PROGRESS: DownloadProgress
-    OCR_MODEL_DOWNLOAD_CONMPLETED: DownloadProgress
+export enum DomainEvent {
+    ScanStarted = "scan_started",
+    ScanCompleted = "scan_completed",
+    NewFilesIndexed = "new_files_indexed",
 }
+
+type EventMap = {
+    [DomainEvent.ScanStarted]: null;
+    [DomainEvent.ScanCompleted]: number;
+    [DomainEvent.NewFilesIndexed]: null;
+};
 
 type Callback<T> = (data: T) => void;
 
-class AppEventBus {
-    private listerners: { event: keyof APP_EVENT, callback: Callback<APP_EVENT[keyof APP_EVENT]> }[] = [];
+interface Listener<K extends keyof EventMap = keyof EventMap> {
+    event: K;
+    callback: Callback<EventMap[K]>;
+}
 
-    on<K extends keyof APP_EVENT>(event: K, callback: Callback<APP_EVENT[K]>) {
-        this.listerners.push({ event, callback });
+class AppEventBus {
+    private listeners: Listener[] = [];
+
+    on<K extends keyof EventMap>(event: K, callback: Callback<EventMap[K]>) {
+        this.listeners.push({ event, callback } as Listener);
     }
-    emit<K extends keyof APP_EVENT>(event: K, data: APP_EVENT[K]) {
-        this.listerners.forEach(listener => {
+
+    off<K extends keyof EventMap>(event: K, callback: Callback<EventMap[K]>) {
+        this.listeners = this.listeners.filter(
+            (listener) => !(listener.event === event && listener.callback === callback)
+        );
+    }
+
+    emit<K extends keyof EventMap>(event: K, data: EventMap[K]) {
+        this.listeners.forEach((listener) => {
             if (listener.event === event) {
-                listener.callback(data);
+                (listener.callback as Callback<EventMap[K]>)(data);
             }
         });
     }

@@ -15,7 +15,7 @@ export enum ExtensionDomains {
     unknown = "unknown"
 }
 
-const ExtensionMapper : Record<string, ExtensionType> = {
+export const ExtensionMapper : Record<string, ExtensionType> = {
     "txt": {
         type: [ExtensionDomains.Textable],
         icon: RiFileLine
@@ -93,4 +93,17 @@ export const getFileDomain = (file: string): typeof ExtensionMapper[keyof typeof
         type: [ExtensionDomains.unknown],
         icon: RiFileLine
     }
+}
+
+
+export function formatBytes(bytes: number, decimals = 2): string {
+  if (bytes === 0) return "0 B";
+
+  const units = ["B", "KB", "MB", "GB", "TB", "PB"];
+  const k = 1024;
+
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  const value = bytes / Math.pow(k, i);
+
+  return `${value.toFixed(i === 0 ? 0 : decimals)} ${units[i]}`;
 }
